@@ -6,11 +6,11 @@ import (
 )
 
 // NewBlockProcessor creates a new block process strategy.
-func NewBlockProcessor(pushStrategyManager commondomain.PushStrategyManager, client domain.SQSGRPClient, poolExtracter commondomain.PoolExtracter, poolsTransformer domain.PoolsTransformer, nodeStatusChecker domain.NodeStatusChecker) commondomain.BlockProcessor {
+func NewBlockProcessor(blockProcessStrategyManager commondomain.BlockProcessStrategyManager, client domain.SQSGRPClient, poolExtracter commondomain.PoolExtracter, poolsTransformer domain.PoolsTransformer, nodeStatusChecker domain.NodeStatusChecker) commondomain.BlockProcessor {
 	// If true, ingest all the data.
-	if pushStrategyManager.ShouldPushAllData() {
+	if blockProcessStrategyManager.ShouldPushAllData() {
 
-		pushStrategyManager.MarkInitialDataIngested()
+		blockProcessStrategyManager.MarkInitialDataIngested()
 
 		return &fullIndexerBlockProcessStrategy{
 			sqsGRPCClient:     client,

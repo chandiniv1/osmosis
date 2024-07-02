@@ -6,11 +6,11 @@ import (
 )
 
 // NewBlockProcessor creates a new block process strategy.
-func NewBlockProcessor(pushStrategyManager commondomain.PushStrategyManager, client domain.Publisher, poolExtracter commondomain.PoolExtracter, keepers domain.Keepers) commondomain.BlockProcessor {
+func NewBlockProcessor(blockProcessStrategyManager commondomain.BlockProcessStrategyManager, client domain.Publisher, poolExtracter commondomain.PoolExtracter, keepers domain.Keepers) commondomain.BlockProcessor {
 	// If true, ingest all the data.
-	if pushStrategyManager.ShouldPushAllData() {
+	if blockProcessStrategyManager.ShouldPushAllData() {
 
-		pushStrategyManager.MarkInitialDataIngested()
+		blockProcessStrategyManager.MarkInitialDataIngested()
 
 		return &fullIndexerBlockProcessStrategy{
 			client:        client,

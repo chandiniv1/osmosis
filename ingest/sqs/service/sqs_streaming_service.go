@@ -25,12 +25,12 @@ var _ baseapp.StreamingService = (*sqsStreamingService)(nil)
 // It does so by either processing the entire block data or only the pools that were changed in the block.
 // The service uses a pool tracker to keep track of the pools that were changed in the block.
 type sqsStreamingService struct {
-	writeListeners      map[storetypes.StoreKey][]storetypes.WriteListener
-	grpcClient          domain.SQSGRPClient
-	poolsExtracter      commondomain.PoolExtracter
-	poolsTransformer    domain.PoolsTransformer
-	poolTracker         domain.BlockPoolUpdateTracker
-	pushStrategyManager commondomain.PushStrategyManager
+	writeListeners              map[storetypes.StoreKey][]storetypes.WriteListener
+	grpcClient                  domain.SQSGRPClient
+	poolsExtracter              commondomain.PoolExtracter
+	poolsTransformer            domain.PoolsTransformer
+	poolTracker                 domain.BlockPoolUpdateTracker
+	blockProcessStrategyManager commondomain.BlockProcessStrategyManager
 
 	nodeStatusChecker domain.NodeStatusChecker
 
@@ -42,14 +42,14 @@ type sqsStreamingService struct {
 // sqsIngester is an ingester that ingests the block data into SQS.
 // poolTracker is a tracker that tracks the pools that were changed in the block.
 // nodeStatusChecker is a checker that checks if the node is syncing.
-func New(writeListeners map[storetypes.StoreKey][]storetypes.WriteListener, poolsExtracter commondomain.PoolExtracter, poolsTransformer domain.PoolsTransformer, poolTracker domain.BlockPoolUpdateTracker, grpcClient domain.SQSGRPClient, pushStrategyManager commondomain.PushStrategyManager, nodeStatusChecker domain.NodeStatusChecker) baseapp.StreamingService {
+func New(writeListeners map[storetypes.StoreKey][]storetypes.WriteListener, poolsExtracter commondomain.PoolExtracter, poolsTransformer domain.PoolsTransformer, poolTracker domain.BlockPoolUpdateTracker, grpcClient domain.SQSGRPClient, blockProcessStrategyManager commondomain.BlockProcessStrategyManager, nodeStatusChecker domain.NodeStatusChecker) baseapp.StreamingService {
 	return &sqsStreamingService{
-		writeListeners:      writeListeners,
-		poolsExtracter:      poolsExtracter,
-		poolsTransformer:    poolsTransformer,
-		poolTracker:         poolTracker,
-		nodeStatusChecker:   nodeStatusChecker,
-		pushStrategyManager: pushStrategyManager,
+		writeListeners:              writeListeners,
+		poolsExtracter:              poolsExtracter,
+		poolsTransformer:            poolsTransformer,
+		poolTracker:                 poolTracker,
+		nodeStatusChecker:           nodeStatusChecker,
+		blockProcessStrategyManager: blockProcessStrategyManager,
 
 		shouldProcessAllBlockData: true,
 	}
@@ -103,7 +103,7 @@ func (s *sqsStreamingService) processBlockRecoverError(ctx sdk.Context) (err err
 		if r := recover(); r != nil {
 			// Due to panic, we set shouldProcessAllBlockData to true to reprocess the entire block.
 			// Be careful when changing this behavior.
-			s.pushStrategyManager.MarkErrorObserved()
+			s.blockProcessStrategyManager.MarkErrorObserved()
 
 			// Emit telemetry for the panic.
 			emitFailureTelemetry(ctx, r, domain.SQSProcessBlockPanicMetricName)
@@ -116,7 +116,7 @@ func (s *sqsStreamingService) processBlockRecoverError(ctx sdk.Context) (err err
 	if err := s.processBlock(ctx); err != nil {
 		// Due to error, we set shouldProcessAllBlockData to true to reprocess the entire block.
 		// Be careful when changing this behavior.
-		s.pushStrategyManager.MarkErrorObserved()
+		s.blockProcessStrategyManager.MarkErrorObserved()
 
 		// Emit telemetry for the error.
 		emitFailureTelemetry(ctx, err, domain.SQSProcessBlockErrorMetricName)
@@ -157,7 +157,7 @@ func (s *sqsStreamingService) Stream(wg *sync.WaitGroup) error {
 // Returns error if the block data processing fails.
 func (s *sqsStreamingService) processBlock(ctx sdk.Context) error {
 
-	blockProcessor := blockprocessor.NewBlockProcessor(s.pushStrategyManager, s.grpcClient, s.poolsExtracter, s.poolsTransformer, s.nodeStatusChecker)
+	blockProcessor := blockprocessor.NewBlockProcessor(s.blockProcessStrategyManager, s.grpcClient, s.poolsExtracter, s.poolsTransformer, s.nodeStatusChecker)
 
 	if err := blockProcessor.ProcessBlock(ctx); err != nil {
 		return err

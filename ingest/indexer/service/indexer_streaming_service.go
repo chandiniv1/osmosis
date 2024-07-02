@@ -21,7 +21,7 @@ type indexerStreamingService struct {
 	writeListeners map[storetypes.StoreKey][]storetypes.WriteListener
 
 	// manages tracking of whether all the data should be processed or only the changed in the block
-	pushStrategyManager commondomain.PushStrategyManager
+	blockProcessStrategyManager commondomain.BlockProcessStrategyManager
 
 	client domain.Publisher
 
@@ -36,12 +36,12 @@ type indexerStreamingService struct {
 // sqsIngester is an ingester that ingests the block data into SQS.
 // poolTracker is a tracker that tracks the pools that were changed in the block.
 // nodeStatusChecker is a checker that checks if the node is syncing.
-func New(writeListeners map[storetypes.StoreKey][]storetypes.WriteListener, coldStartManager commondomain.PushStrategyManager, client domain.Publisher, poolExtracter commondomain.PoolExtracter, keepers domain.Keepers) baseapp.StreamingService {
+func New(writeListeners map[storetypes.StoreKey][]storetypes.WriteListener, coldStartManager commondomain.BlockProcessStrategyManager, client domain.Publisher, poolExtracter commondomain.PoolExtracter, keepers domain.Keepers) baseapp.StreamingService {
 	return &indexerStreamingService{
 
 		writeListeners: writeListeners,
 
-		pushStrategyManager: coldStartManager,
+		blockProcessStrategyManager: coldStartManager,
 
 		poolExtracter: poolExtracter,
 
@@ -98,7 +98,7 @@ func (s *indexerStreamingService) ListenEndBlock(ctx context.Context, req types.
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Create block processor
-	blockProcessor := blockprocessor.NewBlockProcessor(s.pushStrategyManager, s.client, s.poolExtracter, s.keepers)
+	blockProcessor := blockprocessor.NewBlockProcessor(s.blockProcessStrategyManager, s.client, s.poolExtracter, s.keepers)
 
 	// Process block.
 	if err := blockProcessor.ProcessBlock(sdkCtx); err != nil {

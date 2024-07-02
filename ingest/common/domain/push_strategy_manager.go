@@ -1,8 +1,8 @@
 package commondomain
 
-// PushStrategyManager is an interface for managing the strategy of pushing the blocks.
+// BlockProcessStrategyManager is an interface for managing the strategy of pushing the blocks.
 // Either all block data or only the block update are the possible options
-type PushStrategyManager interface {
+type BlockProcessStrategyManager interface {
 	// ShouldPushAllData returns true if all data should be pushed.
 	ShouldPushAllData() bool
 
@@ -18,11 +18,11 @@ type coldStartManager struct {
 	shouldPushAllData bool
 }
 
-var _ PushStrategyManager = &coldStartManager{}
+var _ BlockProcessStrategyManager = &coldStartManager{}
 
-// NewPushStrategyManager creates a new push strategy manager.
+// NewBlockProcessStrategyManager creates a new push strategy manager.
 // It is initialized with the strategy of pushing all data.
-func NewPushStrategyManager() PushStrategyManager {
+func NewBlockProcessStrategyManager() BlockProcessStrategyManager {
 	return &coldStartManager{
 		shouldPushAllData: true,
 	}

@@ -11,9 +11,9 @@ import (
 
 	"github.com/osmosis-labs/osmosis/osmomath"
 	"github.com/osmosis-labs/osmosis/v25/app/apptesting"
+	commondomain "github.com/osmosis-labs/osmosis/v25/ingest/common/domain"
 	"github.com/osmosis-labs/osmosis/v25/ingest/indexer/domain"
 	indexerdomain "github.com/osmosis-labs/osmosis/v25/ingest/indexer/domain"
-	commondomain "github.com/osmosis-labs/osmosis/v25/ingest/common/domain"
 	"github.com/osmosis-labs/osmosis/v25/ingest/indexer/domain/mocks"
 	"github.com/osmosis-labs/osmosis/v25/ingest/indexer/service/writelistener"
 )
@@ -142,7 +142,7 @@ func (s *WriteListenerTestSuite) TestWriteListener_Bank() {
 			s.Setup()
 
 			// Initialize cold start manager
-			coldStartManager := commondomain.NewPushStrategyManager()
+			coldStartManager := commondomain.NewBlockProcessStrategyManager()
 
 			// Mark initial data ingested if the test case has cold started.
 			if tc.hasColdStarted {

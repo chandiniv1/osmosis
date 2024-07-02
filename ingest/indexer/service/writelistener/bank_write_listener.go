@@ -23,15 +23,15 @@ type bankWriteListener struct {
 
 	client indexerdomain.TokenSupplyPublisher
 
-	pushStrategyManager commondomain.PushStrategyManager
+	blockProcessStrategyManager commondomain.BlockProcessStrategyManager
 }
 
-func NewBank(ctx context.Context, client indexerdomain.TokenSupplyPublisher, coldStartManager commondomain.PushStrategyManager) storetypes.WriteListener {
+func NewBank(ctx context.Context, client indexerdomain.TokenSupplyPublisher, coldStartManager commondomain.BlockProcessStrategyManager) storetypes.WriteListener {
 	return &bankWriteListener{
 		ctx:    ctx,
 		client: client,
 
-		pushStrategyManager: coldStartManager,
+		blockProcessStrategyManager: coldStartManager,
 	}
 }
 
@@ -43,7 +43,7 @@ func NewBank(ctx context.Context, client indexerdomain.TokenSupplyPublisher, col
 // For any other key, no action is taken.
 // delete parameter is ignored.
 func (s *bankWriteListener) OnWrite(storeKey storetypes.StoreKey, key []byte, value []byte, delete bool) error {
-	if !s.pushStrategyManager.ShouldPushAllData() {
+	if !s.blockProcessStrategyManager.ShouldPushAllData() {
 		return indexerdomain.ErrColdStartManagerDidNotIngest
 	}
 

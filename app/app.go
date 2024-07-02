@@ -323,7 +323,7 @@ func NewOsmosisApp(
 		// Create pools ingester
 		poolsTransformer := poolstransformer.NewPoolTransformer(sqsKeepers, sqs.DefaultUSDCUOSMOPool)
 
-		pushStrategyManager := commondomain.NewPushStrategyManager()
+		blockProcessStrategyManager := commondomain.NewBlockProcessStrategyManager()
 
 		// Create sqs grpc client
 		sqsGRPCClient := service.NewGRPCCLient(sqsConfig.GRPCIngestAddress, sqsConfig.GRPCIngestMaxCallSizeBytes, appCodec)
@@ -340,7 +340,7 @@ func NewOsmosisApp(
 
 		// Create the SQS streaming service by setting up the write listeners,
 		// the SQS ingester, and the pool tracker.
-		sqsStreamingService := sqsservice.New(writeListeners, poolExtracter, poolsTransformer, poolTracker, sqsGRPCClient, pushStrategyManager, nodeStatusChecker)
+		sqsStreamingService := sqsservice.New(writeListeners, poolExtracter, poolsTransformer, poolTracker, sqsGRPCClient, blockProcessStrategyManager, nodeStatusChecker)
 
 		// Register the SQS streaming service with the app.
 		app.SetStreamingService(sqsStreamingService)
@@ -357,14 +357,14 @@ func NewOsmosisApp(
 		pubSubCtx := context.Background()
 
 		// Create cold start manager
-		pushStrategyManager := commondomain.NewPushStrategyManager()
+		blockProcessStrategyManager := commondomain.NewBlockProcessStrategyManager()
 
 		// Create pool tracker that tracks pool updates
 		// made by the write listenetrs.
 		poolTracker := pooltracker.NewMemory()
 
 		// Create write listeners for the indexer service.
-		writeListeners := getIndexerServiceWriteListeners(pubSubCtx, app, appCodec, poolTracker, app.WasmKeeper, indexerIngester, pushStrategyManager)
+		writeListeners := getIndexerServiceWriteListeners(pubSubCtx, app, appCodec, poolTracker, app.WasmKeeper, indexerIngester, blockProcessStrategyManager)
 
 		// Create keepers for the indexer service.
 		keepers := indexerdomain.Keepers{
@@ -384,7 +384,7 @@ func NewOsmosisApp(
 		// Create the indexer streaming service.
 		poolExtracter := poolextracter.New(poolKeepers, poolTracker)
 
-		indexerStreamingService := indexerservice.New(writeListeners, pushStrategyManager, indexerIngester, poolExtracter, keepers)
+		indexerStreamingService := indexerservice.New(writeListeners, blockProcessStrategyManager, indexerIngester, poolExtracter, keepers)
 
 		// Register the SQS streaming service with the app.
 		app.SetStreamingService(indexerStreamingService)
@@ -599,12 +599,12 @@ func getSQSServiceWriteListeners(app *OsmosisApp, appCodec codec.Codec, blockPoo
 }
 
 // getIndexerServiceWriteListeners returns the write listeners for the app that are specific to the indexer service.
-func getIndexerServiceWriteListeners(ctx context.Context, app *OsmosisApp, appCodec codec.Codec, blockPoolUpdateTracker domain.BlockPoolUpdateTracker, wasmkeeper *wasmkeeper.Keeper, client indexerdomain.Publisher, pushStrategyManager commondomain.PushStrategyManager) map[storetypes.StoreKey][]storetypes.WriteListener {
+func getIndexerServiceWriteListeners(ctx context.Context, app *OsmosisApp, appCodec codec.Codec, blockPoolUpdateTracker domain.BlockPoolUpdateTracker, wasmkeeper *wasmkeeper.Keeper, client indexerdomain.Publisher, blockProcessStrategyManager commondomain.BlockProcessStrategyManager) map[storetypes.StoreKey][]storetypes.WriteListener {
 	writeListeners := make(map[storetypes.StoreKey][]storetypes.WriteListener)
 
 	// Add write listeners for the bank module.
 	writeListeners[app.GetKey(banktypes.ModuleName)] = []storetypes.WriteListener{
-		indexerwritelistener.NewBank(ctx, client, pushStrategyManager),
+		indexerwritelistener.NewBank(ctx, client, blockProcessStrategyManager),
 	}
 
 	poolWriteListeners := getPoolWriteListeners(app, appCodec, blockPoolUpdateTracker, wasmkeeper)
