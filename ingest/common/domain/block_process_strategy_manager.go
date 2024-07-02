@@ -14,28 +14,28 @@ type BlockProcessStrategyManager interface {
 	MarkErrorObserved()
 }
 
-type coldStartManager struct {
+type blockProcessStrategyManager struct {
 	shouldPushAllData bool
 }
 
-var _ BlockProcessStrategyManager = &coldStartManager{}
+var _ BlockProcessStrategyManager = &blockProcessStrategyManager{}
 
 // NewBlockProcessStrategyManager creates a new push strategy manager.
 // It is initialized with the strategy of pushing all data.
 func NewBlockProcessStrategyManager() BlockProcessStrategyManager {
-	return &coldStartManager{
+	return &blockProcessStrategyManager{
 		shouldPushAllData: true,
 	}
 }
 
-func (c *coldStartManager) ShouldPushAllData() bool {
+func (c *blockProcessStrategyManager) ShouldPushAllData() bool {
 	return c.shouldPushAllData
 }
 
-func (c *coldStartManager) MarkInitialDataIngested() {
+func (c *blockProcessStrategyManager) MarkInitialDataIngested() {
 	c.shouldPushAllData = false
 }
 
-func (c *coldStartManager) MarkErrorObserved() {
+func (c *blockProcessStrategyManager) MarkErrorObserved() {
 	c.shouldPushAllData = true
 }
