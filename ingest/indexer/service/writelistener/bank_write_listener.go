@@ -10,6 +10,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/osmosis-labs/osmosis/osmomath"
+	commondomain "github.com/osmosis-labs/osmosis/v25/ingest/common/domain"
 	indexerdomain "github.com/osmosis-labs/osmosis/v25/ingest/indexer/domain"
 )
 
@@ -22,15 +23,15 @@ type bankWriteListener struct {
 
 	client indexerdomain.TokenSupplyPublisher
 
-	coldStartManager indexerdomain.ColdStartManager
+	pushStrategyManager commondomain.PushStrategyManager
 }
 
-func NewBank(ctx context.Context, client indexerdomain.TokenSupplyPublisher, coldStartManager indexerdomain.ColdStartManager) storetypes.WriteListener {
+func NewBank(ctx context.Context, client indexerdomain.TokenSupplyPublisher, coldStartManager commondomain.PushStrategyManager) storetypes.WriteListener {
 	return &bankWriteListener{
 		ctx:    ctx,
 		client: client,
 
-		coldStartManager: coldStartManager,
+		pushStrategyManager: coldStartManager,
 	}
 }
 
@@ -42,7 +43,7 @@ func NewBank(ctx context.Context, client indexerdomain.TokenSupplyPublisher, col
 // For any other key, no action is taken.
 // delete parameter is ignored.
 func (s *bankWriteListener) OnWrite(storeKey storetypes.StoreKey, key []byte, value []byte, delete bool) error {
-	if !s.coldStartManager.HasIngestedInitialData() {
+	if !s.pushStrategyManager.ShouldPushAllData() {
 		return indexerdomain.ErrColdStartManagerDidNotIngest
 	}
 
